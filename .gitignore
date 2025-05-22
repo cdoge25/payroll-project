@@ -12,3 +12,4 @@ wheels/
 # other files
 logs/
 PAYROLL_DATA/
+*.jar
