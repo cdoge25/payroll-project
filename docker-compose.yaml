@@ -4,13 +4,15 @@ x-airflow-common:
   environment:
     &airflow-common-env
     AIRFLOW__CORE__EXECUTOR: LocalExecutor
-    AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://postgres:postgres@postgres/airflow
-    AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://postgres:postgres@postgres/airflow
+    AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
     AIRFLOW__CORE__FERNET_KEY: ''
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     AIRFLOW__API__AUTH_BACKEND: 'airflow.api.auth.backend.basic_auth'
     AIRFLOW__CORE__TEST_CONNECTION: 'Enabled'
+    AIRFLOW__CORE__EXECUTION_API_SERVER_URL: 'http://airflow-apiserver:8080/execution/'
     # Permissions for the airflow user
     # AIRFLOW_UID: ${AIRFLOW_UID}
     # Add the include folder to the PYTHONPATH
@@ -42,17 +44,15 @@ services:
     command:
       - -c
       - |
-        function ver() {
-          printf "%04d%04d%04d%04d" $${1//./ }
-        }
         if [[ -z "${AIRFLOW_UID}" ]]; then
           echo
           echo -e "\033[1;33mWARNING!!!: AIRFLOW_UID not set!\e[0m"
           echo "If you are on Linux, you SHOULD follow the instructions below to set "
           echo "AIRFLOW_UID environment variable, otherwise files will be owned by root."
           echo "For other operating systems you can get rid of the warning with manually created .env file:"
-          echo "    See: https://airflow.apache.org/docs/apache-airflow/stable/start/docker.html#setting-the-right-airflow-user"
+          echo "    See: https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-compose/index.html#setting-the-right-airflow-user"
           echo
+          export AIRFLOW_UID=$(id -u)
         fi
         one_meg=1048576
         mem_available=$$(($$(getconf _PHYS_PAGES) * $$(getconf PAGE_SIZE) / one_meg))
@@ -84,37 +84,62 @@ services:
           echo
           echo -e "\033[1;33mWARNING!!!: You have not enough resources to run Airflow (see above)!\e[0m"
           echo "Please follow the instructions to increase amount of resources available:"
-          echo "   https://airflow.apache.org/docs/apache-airflow/stable/start/docker.html#before-you-begin"
+          echo "   https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-compose/index.html#before-you-begin"
           echo
         fi
-        mkdir -p /sources/logs /sources/dags /sources/plugins
-        chown -R "${AIRFLOW_UID}:0" /sources/{logs,dags,plugins}
-        exec /entrypoint airflow version
+        echo
+        echo "Creating missing opt dirs if missing:"
+        echo
+        mkdir -v -p /opt/airflow/{logs,dags,plugins,config}
+        echo
+        echo "Airflow version:"
+        /entrypoint airflow version
+        echo
+        echo "Files in shared volumes:"
+        echo
+        ls -la /opt/airflow/{logs,dags,plugins,config}
+        echo
+        echo "Running airflow config list to create default config file if missing."
+        echo
+        /entrypoint airflow config list >/dev/null
+        echo
+        echo "Files in shared volumes:"
+        echo
+        ls -la /opt/airflow/{logs,dags,plugins,config}
+        echo
+        echo "Change ownership of files in /opt/airflow to ${AIRFLOW_UID}:0"
+        echo
+        chown -R "${AIRFLOW_UID}:0" /opt/airflow/
+        echo
+        echo "Change ownership of files in shared volumes to ${AIRFLOW_UID}:0"
+        echo
+        chown -v -R "${AIRFLOW_UID}:0" /opt/airflow/{logs,dags,plugins,config}
+        echo
+        echo "Files in shared volumes:"
+        echo
+        ls -la /opt/airflow/{logs,dags,plugins,config}
     # yamllint enable rule:line-length
     environment:
       <<: *airflow-common-env
-      _AIRFLOW_DB_UPGRADE: 'true'
+      _AIRFLOW_DB_MIGRATE: 'true'
       _AIRFLOW_WWW_USER_CREATE: 'true'
       _AIRFLOW_WWW_USER_USERNAME: airflow
       _AIRFLOW_WWW_USER_PASSWORD: airflow
     user: "0:0"
-    volumes:
-      - ./airflow/dags:/sources/dags
-      - ./airflow/logs:/sources/logs
-      - ./airflow/plugins:/sources/plugins
 
-  airflow-webserver:
+  airflow-apiserver:
     <<: *airflow-common
     image: apache/airflow:3.0.1
-    container_name: airflow-webserver
-    command: airflow webserver
+    container_name: airflow-apiserver
+    command: api-server
     ports:
       - 8080:8080
     # healthcheck:
-    #   test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
-    #   interval: 10s
+    #   test: ["CMD", "curl", "--fail", "http://localhost:8080/api/v2/version"]
+    #   interval: 30s
     #   timeout: 10s
     #   retries: 5
+    #   start_period: 30s
     depends_on:
       <<: *airflow-common-depends-on
       airflow-init:
@@ -124,12 +149,29 @@ services:
     <<: *airflow-common
     image: apache/airflow:3.0.1
     container_name: airflow-scheduler
-    command: airflow scheduler
+    command: scheduler
     # healthcheck:
-    #   test: ["CMD-SHELL", 'airflow jobs check --job-type SchedulerJob --hostname "$${HOSTNAME}"']
-    #   interval: 10s
+    #   test: ["CMD", "curl", "--fail", "http://localhost:8974/health"]
+    #   interval: 30s
     #   timeout: 10s
     #   retries: 5
+    #   start_period: 30s
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+  
+  airflow-dag-processor:
+    <<: *airflow-common
+    image: apache/airflow:3.0.1
+    container_name: airflow-dag-processor
+    command: dag-processor
+    # healthcheck:
+    #   test: ["CMD-SHELL", 'airflow jobs check --job-type DagProcessorJob --hostname "$${HOSTNAME}"']
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 5
+    #   start_period: 30s
     depends_on:
       <<: *airflow-common-depends-on
       airflow-init:
@@ -154,11 +196,10 @@ services:
     image: postgres:13
     container_name: postgres
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
       POSTGRES_DB: airflow
     volumes:
-      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
       - postgres-db-volume:/var/lib/postgresql/data
     ports:
       - 5432:5432
@@ -167,37 +208,37 @@ services:
       interval: 5s
       retries: 5
   
-  spark-master:
-    image: spark-master
-    container_name: spark-master
-    build:
-      context: ./docker/spark-master
-    ports:
-      - "8082:8080"
-      - "7077:7077"
-    environment:
-      - INIT_DAEMON_STEP=setup_spark
+  # spark-master:
+  #   image: spark-master
+  #   container_name: spark-master
+  #   build:
+  #     context: ./docker/spark-master
+  #   ports:
+  #     - "8082:8080"
+  #     - "7077:7077"
+  #   environment:
+  #     - INIT_DAEMON_STEP=setup_spark
 
-  spark-worker:
-    image: spark-worker
-    container_name: spark-worker
-    build:
-      context: ./docker/spark-worker
-    depends_on:
-      - spark-master
-    ports:
-      - "8081:8081"
-    environment:
-      - "SPARK_MASTER=spark://spark-master:7077"
+  # spark-worker:
+  #   image: spark-worker
+  #   container_name: spark-worker
+  #   build:
+  #     context: ./docker/spark-worker
+  #   depends_on:
+  #     - spark-master
+  #   ports:
+  #     - "8081:8081"
+  #   environment:
+  #     - "SPARK_MASTER=spark://spark-master:7077"
 
-  docker-proxy:
-    image: alpine/socat
-    container_name: docker-proxy
-    command: "TCP4-LISTEN:2375,fork,reuseaddr UNIX-CONNECT:/var/run/docker.sock"
-    ports:
-      - "2376:2375"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+  # docker-proxy:
+  #   image: alpine/socat
+  #   container_name: docker-proxy
+  #   command: "TCP4-LISTEN:2375,fork,reuseaddr UNIX-CONNECT:/var/run/docker.sock"
+  #   ports:
+  #     - "2376:2375"
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock
 
 volumes:
   postgres-db-volume:

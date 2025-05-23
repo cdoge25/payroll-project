@@ -13,3 +13,4 @@ wheels/
 logs/
 PAYROLL_DATA/
 *.jar
+.env
