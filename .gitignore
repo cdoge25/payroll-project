@@ -14,3 +14,4 @@ logs/
 PAYROLL_DATA/
 *.jar
 .env
+test.ipynb
