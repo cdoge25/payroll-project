@@ -13,18 +13,20 @@ x-airflow-common:
     AIRFLOW__API__AUTH_BACKEND: 'airflow.api.auth.backend.basic_auth'
     AIRFLOW__CORE__TEST_CONNECTION: 'Enabled'
     AIRFLOW__CORE__EXECUTION_API_SERVER_URL: 'http://airflow-apiserver:8080/execution/'
+    AIRFLOW__API_AUTH__JWT_SECRET: 5lwF/5gjHmevdFxfa3CATA==
+    AIRFLOW_CONFIG: '/opt/airflow/config/airflow.cfg'
     # Permissions for the airflow user
     # AIRFLOW_UID: ${AIRFLOW_UID}
     # Add the include folder to the PYTHONPATH
     PYTHONPATH: /opt/airflow
   # Secrets
   env_file: ".env"
-
   volumes:
     - ./airflow/dags:/opt/airflow/dags
     - ./airflow/logs:/opt/airflow/logs
     - ./airflow/plugins:/opt/airflow/plugins
     - ./airflow/scripts:/opt/airflow/scripts
+    - ./airflow/config:/opt/airflow/config
     - ./dbt_payroll:/opt/airflow/dbt_payroll
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
