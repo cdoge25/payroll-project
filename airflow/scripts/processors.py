@@ -32,6 +32,10 @@ class S3CsvFileProcessor:
             "junior_pay_rates": self._process_junior_pay_rates,
             "pay_rate_adjustments": self._process_pay_rate_adjustments,
             "minimum_pay_rates": self._process_minimum_pay_rates,
+            "combined_holidays": self._process_combined_holidays,
+            "super_guarantee_rates_formatted": self._process_super_guarantee_rates_formatted,
+            "Tax-2019-2015": self._process_tax_2019_2015,
+            "past_payslips": self._process_past_payslips,
         }
 
     def _process_file(self, s3_raw_file_url):
@@ -117,4 +121,63 @@ class S3CsvFileProcessor:
         )
 
     def _process_minimum_pay_rates(self):
+        pass
+
+    def _process_combined_holidays(self):
+        self.conn.execute(
+            """
+            ALTER TABLE combined_holidays
+                RENAME COLUMN "Date" TO holiday_date;
+            ALTER TABLE combined_holidays
+                RENAME COLUMN "Holiday Name" TO holiday_name;
+            ALTER TABLE combined_holidays
+                RENAME COLUMN "Information" TO information;
+            ALTER TABLE combined_holidays
+                RENAME COLUMN "More information" TO more_information;
+            ALTER TABLE combined_holidays
+                RENAME COLUMN "Jurisdiction" TO jurisdiction;
+            ALTER TABLE combined_holidays
+                RENAME COLUMN "Day Of Week" TO day_of_week;
+            """
+        )
+
+    def _process_super_guarantee_rates_formatted(self):
+        self.conn.execute(
+            """
+            ALTER TABLE super_guarantee_rates_formatted
+                RENAME COLUMN "Start Period" TO start_period;
+            ALTER TABLE super_guarantee_rates_formatted
+                RENAME COLUMN "End Period" TO end_period;
+            ALTER TABLE super_guarantee_rates_formatted
+                RENAME COLUMN "Super guarantee rate (charge percentage) TO super_guarantee_rate_percentage;";
+            """
+        )
+
+    def _process_tax_2019_2015(self):
+        self.conn.execute(
+            """
+            ALTER TABLE "Tax-2019-2015"
+                RENAME COLUMN "Taxable income" TO taxable_income;
+            ALTER TABLE "Tax-2019-2015"
+                RENAME COLUMN "Tax on this income" TO tax_on_this_income;
+            ALTER TABLE "Tax-2019-2015"
+                RENAME COLUMN "Year" TO year;
+            ALTER TABLE "Tax-2019-2015"
+                RENAME COLUMN "Note" TO note;
+            ALTER TABLE "Tax-2019-2015"
+                RENAME COLUMN "Start Range" TO start_range;
+            ALTER TABLE "Tax-2019-2015"
+                RENAME COLUMN "End Range" TO end_range;
+            ALTER TABLE "Tax-2019-2015"
+                RENAME COLUMN "Date Start" TO date_start;
+            ALTER TABLE "Tax-2019-2015"
+                RENAME COLUMN "Date End" TO date_end;
+            ALTER TABLE "Tax-2019-2015"
+                RENAME COLUMN "Fixed Tax" TO fixed_tax;
+            ALTER TABLE "Tax-2019-2015"
+                RENAME COLUMN "Cumulative Tax" TO cumulative_tax;
+            """
+        )
+
+    def _process_past_payslips(self):
         pass
