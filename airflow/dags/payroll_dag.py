@@ -9,7 +9,6 @@ from scripts.extract import (
 from scripts.process import S3CsvFileProcessor
 
 from airflow.decorators import dag, task
-from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from airflow.providers.docker.operators.docker import DockerOperator
 from airflow.providers.slack.notifications.slack import SlackNotifier
 
