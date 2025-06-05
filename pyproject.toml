@@ -5,6 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "apache-airflow-providers-docker>=4.4.0",
     "apache-airflow>=3.0.0",
     "boto3>=1.38.21",
     "dbt-core>=1.9.4",
@@ -17,4 +18,5 @@ dependencies = [
     "pymupdf>=1.26.0",
     "pyspark>=3.5.5",
     "s3fs>=0.4.2",
+    "apache-airflow-providers-slack>=9.1.0",
 ]

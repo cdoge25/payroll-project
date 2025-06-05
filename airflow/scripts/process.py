@@ -34,7 +34,7 @@ class S3CsvFileProcessor:
             "minimum_pay_rates": self._process_minimum_pay_rates,
             "combined_holidays": self._process_combined_holidays,
             "super_guarantee_rates_formatted": self._process_super_guarantee_rates_formatted,
-            "Tax-2019-2015": self._process_tax_2019_2015,
+            "tax_rates": self._process_tax_rates,
             "past_payslips": self._process_past_payslips,
         }
 
@@ -43,7 +43,7 @@ class S3CsvFileProcessor:
         table_name = s3_raw_file_url.split("/")[-1].split(".")[0]
         # Read the CSV file from S3
         self.conn.execute(
-            f"CREATE OR REPLACE TABLE {table_name} AS SELECT DISTINCT * FROM read_csv_auto('{s3_raw_file_url}')"
+            f"CREATE OR REPLACE TABLE '{table_name}' AS SELECT DISTINCT * FROM read_csv_auto('{s3_raw_file_url}')"
         )
         cleaning_function = self._get_cleaning_function(table_name)
         cleaning_function()
@@ -70,12 +70,28 @@ class S3CsvFileProcessor:
         pass
 
     def _process_timesheet(self):
-        self.conn.execute(
-            """
+        self.conn.execute("""
             ALTER TABLE timesheet
-                RENAME COLUMN employee_code TO employee_id;
-            """
-        )
+            RENAME COLUMN employee_code TO employee_id;
+        """)
+
+        # Convert start_time and end_time to string
+        self.conn.execute("""
+            CREATE OR REPLACE TABLE timesheet_str AS
+            SELECT 
+                timesheet_id,
+                employee_id,
+                timesheet_transaction_date,
+                CAST(start_time AS VARCHAR) AS start_time,
+                CAST(end_time AS VARCHAR) AS end_time,
+                timesheet_transaction_hours,
+                pay_period_id
+            FROM timesheet;
+        """)
+
+        # Replace original table with transformed one
+        self.conn.execute("DROP TABLE timesheet;")
+        self.conn.execute("ALTER TABLE timesheet_str RENAME TO timesheet;")
 
     def _process_roster(self):
         pass
@@ -149,32 +165,32 @@ class S3CsvFileProcessor:
             ALTER TABLE super_guarantee_rates_formatted
                 RENAME COLUMN "End Period" TO end_period;
             ALTER TABLE super_guarantee_rates_formatted
-                RENAME COLUMN "Super guarantee rate (charge percentage) TO super_guarantee_rate_percentage;";
+                RENAME COLUMN "Super guarantee rate (charge percentage)" TO super_guarantee_rate_percentage;
             """
         )
 
-    def _process_tax_2019_2015(self):
+    def _process_tax_rates(self):
         self.conn.execute(
             """
-            ALTER TABLE "Tax-2019-2015"
+            ALTER TABLE tax_rates
                 RENAME COLUMN "Taxable income" TO taxable_income;
-            ALTER TABLE "Tax-2019-2015"
+            ALTER TABLE tax_rates
                 RENAME COLUMN "Tax on this income" TO tax_on_this_income;
-            ALTER TABLE "Tax-2019-2015"
+            ALTER TABLE tax_rates
                 RENAME COLUMN "Year" TO year;
-            ALTER TABLE "Tax-2019-2015"
+            ALTER TABLE tax_rates
                 RENAME COLUMN "Note" TO note;
-            ALTER TABLE "Tax-2019-2015"
+            ALTER TABLE tax_rates
                 RENAME COLUMN "Start Range" TO start_range;
-            ALTER TABLE "Tax-2019-2015"
+            ALTER TABLE tax_rates
                 RENAME COLUMN "End Range" TO end_range;
-            ALTER TABLE "Tax-2019-2015"
+            ALTER TABLE tax_rates
                 RENAME COLUMN "Date Start" TO date_start;
-            ALTER TABLE "Tax-2019-2015"
+            ALTER TABLE tax_rates
                 RENAME COLUMN "Date End" TO date_end;
-            ALTER TABLE "Tax-2019-2015"
+            ALTER TABLE tax_rates
                 RENAME COLUMN "Fixed Tax" TO fixed_tax;
-            ALTER TABLE "Tax-2019-2015"
+            ALTER TABLE tax_rates
                 RENAME COLUMN "Cumulative Tax" TO cumulative_tax;
             """
         )

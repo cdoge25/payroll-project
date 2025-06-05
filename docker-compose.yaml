@@ -210,37 +210,37 @@ services:
       interval: 5s
       retries: 5
   
-  # spark-master:
-  #   image: spark-master
-  #   container_name: spark-master
-  #   build:
-  #     context: ./docker/spark-master
-  #   ports:
-  #     - "8082:8080"
-  #     - "7077:7077"
-  #   environment:
-  #     - INIT_DAEMON_STEP=setup_spark
+  spark-master:
+    image: spark-master
+    container_name: spark-master
+    build:
+      context: ./docker/spark-master
+    ports:
+      - "8082:8080"
+      - "7077:7077"
+    environment:
+      - INIT_DAEMON_STEP=setup_spark
 
-  # spark-worker:
-  #   image: spark-worker
-  #   container_name: spark-worker
-  #   build:
-  #     context: ./docker/spark-worker
-  #   depends_on:
-  #     - spark-master
-  #   ports:
-  #     - "8081:8081"
-  #   environment:
-  #     - "SPARK_MASTER=spark://spark-master:7077"
+  spark-worker:
+    image: spark-worker
+    container_name: spark-worker
+    build:
+      context: ./docker/spark-worker
+    depends_on:
+      - spark-master
+    ports:
+      - "8081:8081"
+    environment:
+      - "SPARK_MASTER=spark://spark-master:7077"
 
-  # docker-proxy:
-  #   image: alpine/socat
-  #   container_name: docker-proxy
-  #   command: "TCP4-LISTEN:2375,fork,reuseaddr UNIX-CONNECT:/var/run/docker.sock"
-  #   ports:
-  #     - "2376:2375"
-  #   volumes:
-  #     - /var/run/docker.sock:/var/run/docker.sock
+  docker-proxy:
+    image: alpine/socat
+    container_name: docker-proxy
+    command: "TCP4-LISTEN:2375,fork,reuseaddr UNIX-CONNECT:/var/run/docker.sock"
+    ports:
+      - "2376:2375"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
 
 volumes:
   postgres-db-volume:
