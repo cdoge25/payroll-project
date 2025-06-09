@@ -19,5 +19,5 @@
     )
 }}
 SELECT *
-FROM {{ source('landing', 'contract_details') }}
+FROM {{ ref('stg_contracts') }}
 {% endsnapshot %}
