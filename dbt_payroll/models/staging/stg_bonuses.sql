@@ -1,8 +1,8 @@
 WITH source AS (
     SELECT *
     FROM {{ source('landing', 'bonus') }}
-)
-bonus_transformed AS (
+),
+bonuses_transformed AS (
     SELECT
         bonus_id,
         employee_id,
@@ -12,4 +12,4 @@ bonus_transformed AS (
     FROM source
 )
 SELECT *
-FROM bonus_transformed
+FROM bonuses_transformed

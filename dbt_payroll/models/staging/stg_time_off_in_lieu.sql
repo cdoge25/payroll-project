@@ -11,3 +11,5 @@ time_off_in_lieu_transformed AS (
         toil_usage_date
     FROM source
 )
+SELECT *
+FROM time_off_in_lieu_transformed
