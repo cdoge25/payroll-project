@@ -16,6 +16,7 @@ This project demonstrates a modern data pipeline for automating the extraction, 
     - [Apache Airflow](#apache-airflow)
     - [Amazon S3](#amazon-s3)
     - [DuckDB](#duckdb)
+    - [Apache Spark](#apache-spark)
     - [Snowflake](#snowflake)
     - [dbt \& Great Expectations](#dbt--great-expectations)
     - [PowerBI](#powerbi)
@@ -119,6 +120,14 @@ Data Lake
 ### DuckDB
 Used for lightweight data transformation and analytics at the data lake layer.
 
+### Apache Spark
+Used as the processing tool when moving from data lake to data warehouse
+<p align="center">
+    <img src="assets/diagrams/spark.png" alt="spark" style="border-radius: 10px;">
+    </br>
+  Spark overview
+</p>
+
 ### Snowflake
 Data Warehouse
 <p align="center">
@@ -144,8 +153,6 @@ For dashboarding and visualization of payroll analytics.
 </p>
 
 ## Business Insights
-
-Once the pipeline is operational, you can generate insights such as:
 
 ### Payroll Overview
 - Total payroll expenses by month, department, or location.
