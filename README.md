@@ -21,7 +21,8 @@ This project demonstrates a modern data pipeline for automating the extraction, 
     - [dbt \& Great Expectations](#dbt--great-expectations)
     - [PowerBI](#powerbi)
   - [Business Insights](#business-insights)
-    - [Payroll Overview](#payroll-overview)
+    - [Overview](#overview)
+    - [Specific](#specific)
     - [Recommendations](#recommendations)
 
 ## Architecture
@@ -154,9 +155,19 @@ For dashboarding and visualization of payroll analytics.
 
 ## Business Insights
 
-### Payroll Overview
-- Total payroll expenses by month, department, or location.
-- Trends in salary, overtime, and deductions.
+### Overview
+<p align="center">
+    <img src="assets/diagrams/dashboard1.png" alt="Payroll Remediation" style="border-radius: 10px;">
+    </br>
+  Payroll Remediation
+</p>
+
+### Specific
+<p align="center">
+    <img src="assets/diagrams/dashboard2.png" alt="Employee Analysis" style="border-radius: 10px;">
+    </br>
+  Employee Analysis
+</p>
 
 ### Recommendations
 - Optimize payroll schedules to improve cash flow.
