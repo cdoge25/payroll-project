@@ -157,14 +157,14 @@ For dashboarding and visualization of payroll analytics.
 
 ### Overview
 <p align="center">
-    <img src="assets/diagrams/dashboard1.png" alt="Payroll Remediation" style="border-radius: 10px;">
+    <img src="assets/dashboard/dashboard1.png" alt="Payroll Remediation" style="border-radius: 10px;">
     </br>
   Payroll Remediation
 </p>
 
 ### Specific
 <p align="center">
-    <img src="assets/diagrams/dashboard2.png" alt="Employee Analysis" style="border-radius: 10px;">
+    <img src="assets/dashboard/dashboard2.png" alt="Employee Analysis" style="border-radius: 10px;">
     </br>
   Employee Analysis
 </p>
